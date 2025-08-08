@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>যুলোজি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "কোন পর্বের প্রাণিতে র‍্যাবডিটিফর্ম লার্ভা দশা দেখা যায়?",
+          options: {
+            a: "Platyhelminthes",
+            b: "Echinodermata",
+            c: "Arthropoda",
+            d: "Nematoda",
+          },
+          correct: "d",
+          explanation:
+            "<p>নেমাটোডা পর্বের প্রাণীদের জীবনচক্রে র‍্যাবডিটিফর্ম লার্ভা দশা দেখা যায়।</p><ul><li>এই লার্ভা দশা নেমাটোডাদের একটি বিশেষ বৈশিষ্ট্য, যা এদের জীবনচক্রের একটি গুরুত্বপূর্ণ অংশ।</li><li>এটি সাধারণত পরজীবী নেমাটোডাদের মধ্যে পরজীবিতার প্রাথমিক পর্যায়ে দেখা যায়।</li></ul>",
+        },
+        {
+          id: 2,
+          question: "Arthropoda পর্বের প্রাণিদের প্রধান রেচন অঙ্গ কোনটি?",
+          options: {
+            a: "মালপিজিয়ান নালিকা",
+            b: "নেফ্রন",
+            c: "শিখা কোষ",
+            d: "নেফ্রিডিয়া",
+          },
+          correct: "a",
+          explanation:
+            "<p>আর্থ্রোপোডা পর্বের প্রাণীদের প্রধান রেচন অঙ্গ হলো মালপিজিয়ান নালিকা।</p><ul><li>এই নালিকাগুলো হিমোসিলের মধ্যে উন্মুক্ত থাকে এবং রক্ত থেকে রেচন বর্জ্য সংগ্রহ করে পৌষ্টিকনালীতে নিক্ষেপ করে।</li><li>যা মলের সাথে দেহ থেকে নির্গত হয়।</li></ul>",
+        },
+        {
+          id: 3,
+          question: "Mollusca এর ক্ষেত্রে কোনটি সঠিক?",
+          options: {
+            a: "নরম কিউটিকুলার এপিডার্মিস দ্বারা আবৃত",
+            b: "নরম ও অখণ্ডায়িত",
+            c: "প্রতি খণ্ডে নেফ্রিডিয়া বিদ্যমান থাকে",
+            d: "দেহাভ্যন্তরে কেন্দ্রীয় গহ্বর বিদ্যমান",
+          },
+          correct: "b",
+          explanation:
+            "<p>মলাস্কা পর্বের প্রাণীদের দেহ নরম ও অখণ্ডায়িত।</p><ul><li>এদের দেহের প্রধান বৈশিষ্ট্য হলো একটি নরম, অখণ্ডায়িত দেহ এবং একটি ম্যান্টল নামক পাতলা আবরণ।</li><li>এই ম্যান্টল প্রায়শই একটি খোলস গঠন করে যা নরম দেহকে সুরক্ষা দেয়।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "কেঁচো কোন অঙ্গের মাধ্যমে শ্বাসপ্রশ্বাস নেয়?",
+          options: {
+            a: "ফুলকা",
+            b: "হৃৎপিণ্ড",
+            c: "ত্বক",
+            d: "ফুসফুস",
+          },
+          correct: "c",
+          explanation:
+            "<p>কেঁচো ত্বক বা চামড়ার মাধ্যমে শ্বাসপ্রশ্বাস নেয়।</p><ul><li>এদের ত্বক ভেজা ও পাতলা হওয়ায় অক্সিজেন সরাসরি ত্বকের মধ্য দিয়ে রক্তে প্রবেশ করতে পারে।</li><li>এবং কার্বন ডাই অক্সাইড রক্ত থেকে ত্বকের মধ্য দিয়ে বাইরে বেরিয়ে আসে।</li></ul>",
+        },
+        {
+          id: 5,
+          question: "প্রাণিজগতের বৃহত্তম Phylum কোনটি?",
+          options: {
+            a: "Arthropoda",
+            b: "Porifera",
+            c: "Mollusca",
+            d: "Annelida",
+          },
+          correct: "a",
+          explanation:
+            "<p>আর্থ্রোপোডা হলো প্রাণিজগতের বৃহত্তম পর্ব।</p><ul><li>এই পর্বে পোকামাকড়, মাকড়সা, কাঁকড়া, এবং অন্যান্য সন্ধিপদী প্রাণীরা অন্তর্ভুক্ত।</li><li>আর্থ্রোপোডারা পৃথিবীতে সবচেয়ে বৈচিত্র্যপূর্ণ এবং অসংখ্য প্রজাতি নিয়ে গঠিত।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "মুখবিবরে ‘র‍্যাডুলা’ নামক অংশ থাকে কোন পর্বের প্রাণিতে?",
+          options: {
+            a: "Chordata",
+            b: "Mollusca",
+            c: "Arthropoda",
+            d: "Nematoda",
+          },
+          correct: "b",
+          explanation:
+            "<p>মলাস্কা পর্বের প্রাণীদের মুখবিবরে 'র‍্যাডুলা' নামক একটি কাইটিনময় রেতিজিহ্বা থাকে।</p><ul><li>এই র‍্যাডুলা খাদ্যবস্তু চেঁছে বা কুঁড়ে খেতে সাহায্য করে।</li><li>এটি মলাস্কদের একটি অনন্য বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "জেলিফিশ কোন পর্বের প্রাণী?",
+          options: {
+            a: "মলাস্কা",
+            b: "আর্থ্রোপোডা",
+            c: "প্লাটিহেলমিনথিস",
+            d: "নিডারিয়া",
+          },
+          correct: "d",
+          explanation:
+            "<p>জেলিফিশ নিডারিয়া পর্বের প্রাণী।</p><ul><li>এই পর্বের প্রাণীদের দেহ অরীয় প্রতিসম এবং এদের দেহে নিডোসাইট নামক দংশক কোষ থাকে।</li><li>যা আত্মরক্ষা ও শিকার ধরার কাজে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "কেঁচোর বায়োলজিক্যাল নাম কী?",
+          options: {
+            a: "Hirudu medicinalis",
+            b: "Metaphire posthuma",
+            c: "Enterobius vermicularis",
+            d: "Aurelia aurita",
+          },
+          correct: "b",
+          explanation:
+            "<p>কেঁচোর বায়োলজিক্যাল বা বৈজ্ঞানিক নাম হলো Metaphire posthuma।</p><ul><li>এটি অ্যানিলিডা পর্বের অন্তর্ভুক্ত।</li><li>এবং এটি মাটির উর্বরতা বৃদ্ধিতে গুরুত্বপূর্ণ ভূমিকা পালন করে।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "কোনটি আর্থ্রোপোডার বৈশিষ্ট্য নয়?",
+          options: {
+            a: "অধিকাংশ দেহ গহ্বর হিমোসিলে পূর্ণ হয়",
+            b: "কিউটিকলে নির্মিত বহিঃকঙ্কাল রয়েছে",
+            c: "রক্ত সংবহনতন্ত্র বদ্ধ ধরনের",
+            d: "দেহ দ্বি-পার্শ্বীয় প্রতিসম, খণ্ডকায়িত এবং ট্যাগমাটায় বিভক্ত",
+          },
+          correct: "c",
+          explanation:
+            "<p>আর্থ্রোপোডা পর্বের প্রাণীদের রক্ত সংবহনতন্ত্র মুক্ত ধরনের, বদ্ধ ধরনের নয়।</p><ul><li>এদের রক্ত হিমোসিল নামক দেহগহ্বরে মুক্তভাবে প্রবাহিত হয়।</li><li>কিউটিকল দ্বারা নির্মিত বহিঃকঙ্কাল, হিমোসিল এবং খণ্ডকায়িত দেহ আর্থ্রোপোডার প্রধান বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 10,
+          question: "নিচের কোনটি প্লাটিহেলমিনথিস পর্বভূক্ত প্রাণী?",
+          options: {
+            a: "Scypha",
+            b: "Ascaris",
+            c: "Fasciola",
+            d: "Metaphire",
+          },
+          correct: "c",
+          explanation:
+            "<p>Fasciola hepatica বা যকৃত কৃমি প্লাটিহেলমিনথিস পর্বের অন্তর্ভুক্ত।</p><ul><li>এই পর্বের প্রাণীরা সাধারণত চ্যাপ্টা কৃমি নামে পরিচিত এবং এদের দেহ সিলোমহীন হয়।</li><li>Scypha পোরিফেরা, Ascaris নেমাটোডা এবং Metaphire অ্যানিলিডা পর্বের প্রাণী।</li></ul>",
+        },
+        {
+          id: 11,
+          question: "মলাস্কা পর্বের প্রাণিতে পাওয়া যায়-",
+          options: {
+            a: "ট্যাগমাটা",
+            b: "নেফ্রিডিয়া",
+            c: "র‍্যাডুলা",
+            d: "ট্রোকোফোর",
+          },
+          correct: "c",
+          explanation:
+            "<p>মলাস্কা পর্বের প্রাণীদের মুখবিবরে 'র‍্যাডুলা' নামক একটি বিশেষ অঙ্গ থাকে, যা কাইটিনময় রেতিজিহ্বা নামে পরিচিত।</p><ul><li>এটি খাদ্যবস্তু চেঁছে বা কুঁড়ে খেতে ব্যবহৃত হয়।</li><li>এটি মলাস্কদের একটি অনন্য বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 12,
+          question: "কোন পর্বের প্রাণিতে পানি সংবহনতন্ত্র দেখা যায়?",
+          options: {
+            a: "Cnidaria",
+            b: "Nematoda",
+            c: "Mollusca",
+            d: "Echinodermata",
+          },
+          correct: "d",
+          explanation:
+            "<p>একাইনোডার্মাটা পর্বের প্রাণীদের একটি বিশেষ বৈশিষ্ট্য হলো পানি সংবহনতন্ত্র বা অ্যাম্বুল্যাক্রাল তন্ত্র।</p><ul><li>এই তন্ত্রটি চলন, খাদ্য সংগ্রহ, শ্বাসপ্রশ্বাস এবং রেচন কার্যক্রমে সহায়তা করে।</li><li>তারা মাছ এর একটি উৎকৃষ্ট উদাহরণ।</li></ul>",
+        },
+        {
+          id: 13,
+          question: "শামুক জ্বর (Snail fever) সৃষ্টি করে কোন পরজীবী?",
+          options: {
+            a: "Schistosoma",
+            b: "Plasmodium",
+            c: "Taenia",
+            d: "Ascaris",
+          },
+          correct: "a",
+          explanation:
+            "<p>Schistosoma (সিস্টোসোমা) নামক পরজীবী কৃমি শামুক জ্বর বা সিস্টোসোমিয়াসিস সৃষ্টি করে।</p><ul><li>এই পরজীবীর জীবনচক্র শামুকের মাধ্যমে সম্পন্ন হয়।</li><li>এবং এরা মানুষের রক্তনালীতে সংক্রমণ ঘটায়।</li></ul>",
+        },
+        {
+          id: 14,
+          question: "কোন পর্বে কোয়ানোসাইট কোষ পাওয়া যায়?",
+          options: {
+            a: "Porifera",
+            b: "Annelida",
+            c: "Cnidaria",
+            d: "Nematoda",
+          },
+          correct: "a",
+          explanation:
+            "<p>পোরিফেরা পর্বের প্রাণীদের দেহে কোয়ানোসাইট বা কলার কোষ পাওয়া যায়।</p><ul><li>এই কোষগুলো স্পঞ্জের দেহের অভ্যন্তরীণ গহ্বরকে রেখাঙ্কিত করে।</li><li>এবং জল প্রবাহ তৈরি ও খাদ্য কণা সংগ্রহে গুরুত্বপূর্ণ ভূমিকা পালন করে।</li></ul>",
+        },
+        {
+          id: 15,
+          question: "কোন পর্বের সকল প্রাণী সামুদ্রিক?",
+          options: {
+            a: "Mollusca",
+            b: "Echinodermata",
+            c: "Cnidaria",
+            d: "Chordata",
+          },
+          correct: "b",
+          explanation:
+            "<p>একাইনোডার্মাটা পর্বের সকল প্রাণী সামুদ্রিক।</p><ul><li>এই পর্বের প্রাণীদের মধ্যে তারা মাছ, সমুদ্র শশা, সমুদ্র আর্চিন ইত্যাদি অন্তর্ভুক্ত।</li><li>এদের মধ্যে পানি সংবহনতন্ত্র একটি প্রধান বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 16,
+          question: "প্রাণিজগতের দ্বিতীয় বৃহত্তম পর্ব কোনটি?",
+          options: {
+            a: "Cnidaria",
+            b: "Platyhelminthes",
+            c: "Porifera",
+            d: "Mollusca",
+          },
+          correct: "d",
+          explanation:
+            "<p>মলাস্কা হলো প্রাণিজগতের দ্বিতীয় বৃহত্তম পর্ব।</p><ul><li>এই পর্বে শামুক, ঝিনুক, অক্টোপাস, স্কুইড ইত্যাদি প্রাণী অন্তর্ভুক্ত।</li><li>এদের দেহে নরম অখণ্ডায়িত ম্যান্টল ও খোলস থাকে।</li></ul>",
+        },
+        {
+          id: 17,
+          question: "কোন পর্বের প্রাণিদের সমুদ্রের ফুল বলা হয়?",
+          options: {
+            a: "Cnidaria",
+            b: "Platyhelminthes",
+            c: "Porifera",
+            d: "Mollusca",
+          },
+          correct: "a",
+          explanation:
+            "<p>কনিডারিয়া পর্বের প্রাণীদের সমুদ্রের ফুল বলা হয়, বিশেষ করে সী অ্যানিমন এবং প্রবালকে।</p><ul><li>এদের উজ্জ্বল রঙ এবং ফুলের মতো আকৃতির কারণে এই নামটি প্রচলিত।</li><li>এরা সামুদ্রিক বাস্তুতন্ত্রে গুরুত্বপূর্ণ ভূমিকা পালন করে।</li></ul>",
+        },
+        {
+          id: 18,
+          question: "কোন পর্বের প্রাণিতে শিখাকোষ পাওয়া যায়?",
+          options: {
+            a: "Porifera",
+            b: "Cnidaria",
+            c: "Platyhelminthes",
+            d: "Nematoda",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্লাটিহেলমিন্থেস পর্বের প্রাণীদের রেচন অঙ্গ হিসেবে শিখাকোষ বা ফ্লেম সেল পাওয়া যায়।</p><ul><li>এই কোষগুলো ফ্লাজেলার সাহায্যে বর্জ্য পদার্থ সংগ্রহ করে।</li><li>এবং প্রোটোনেফ্রিডিয়া নামক নালিকা দিয়ে দেহের বাইরে নির্গত করে।</li></ul>",
+        },
+        {
+          id: 19,
+          question: "নিচের কোনটি আর্থ্রোপোডা প্রাণির বৈশিষ্ট্য?",
+          options: {
+            a: "প্যারাপোডিয়া",
+            b: "হিমোসিল",
+            c: "রেডুলা",
+            d: "হিমালতন্ত্র",
+          },
+          correct: "b",
+          explanation:
+            "<p>আর্থ্রোপোডা পর্বের প্রাণীদের দেহে হিমোসিল নামক একটি বৃহৎ দেহগহ্বর থাকে, যা হিমোলিম্ফ বা রক্ত দ্বারা পূর্ণ থাকে।</p><ul><li>এই হিমোসিল রক্ত সংবহন এবং বিভিন্ন অঙ্গের কার্যকারিতায় সহায়তা করে।</li></ul>",
+        },
+        {
+          id: 20,
+          question: "নিচের কোন পর্বের প্রাণী অঙ্গ-তন্ত্র মাত্রার?",
+          options: {
+            a: "Porifera",
+            b: "Cnidaria",
+            c: "Annelida",
+            d: "Platyhelminthes",
+          },
+          correct: "c",
+          explanation:
+            "<p>অ্যানিলিডা পর্বের প্রাণীরা অঙ্গ-তন্ত্র মাত্রার সংগঠন প্রদর্শন করে।</p><ul><li>এদের দেহে সুগঠিত অঙ্গ এবং অঙ্গতন্ত্র বিদ্যমান, যা বিভিন্ন শারীরবৃত্তীয় কার্য সম্পাদন করে।</li><li>কেঁচো অ্যানিলিডা পর্বের একটি উদাহরণ।</li></ul>",
+        },
+        {
+          id: 21,
+          question: "প্রোসোমা ও অপিসথোসোমা থাকে কোন প্রাণিতে?",
+          options: {
+            a: "ক্রাস্টাসিয়ান",
+            b: "মোলাস্কান",
+            c: "অ্যারাকনিড",
+            d: "ইনসেক্ট",
+          },
+          correct: "c",
+          explanation:
+            "<p>অ্যারাকনিডদের দেহে প্রোসোমা (সেফালোথোরাক্স) এবং অপিসথোসোমা (উদর) থাকে।</p><ul><li>প্রোসোমায় মাথা ও বক্ষ একত্রিত থাকে, যেখানে চোখ, মুখোপাঙ্গ এবং পা যুক্ত থাকে।</li><li>অপিসথোসোমা হলো উদরীয় অংশ।</li></ul>",
+        },
+        {
+          id: 22,
+          question: "নিচের কোন পর্বের প্রাণী ডিউটারোস্টোমিয়া দলভুক্ত?",
+          options: {
+            a: "Annelida",
+            b: "Arthropoda",
+            c: "Mollusca",
+            d: "Echinodermata",
+          },
+          correct: "d",
+          explanation:
+            "<p>একাইনোডার্মাটা পর্বের প্রাণীরা ডিউটারোস্টোমিয়া দলভুক্ত।</p><ul><li>ডিউটারোস্টোমিয়া হলো এমন একটি প্রাণীর দল যেখানে ভ্রূণীয় বিকাশের সময় ব্লাস্টোপোর পায়ুতে পরিণত হয়।</li><li>এবং মুখ নতুনভাবে গঠিত হয়।</li></ul>",
+        },
+        {
+          id: 23,
+          question: "নিচের কোন পর্বটি রেডিয়াটার অন্তর্ভুক্ত?",
+          options: {
+            a: "Arthropoda",
+            b: "Annelida",
+            c: "Cnidaria",
+            d: "Mollusca",
+          },
+          correct: "c",
+          explanation:
+            "<p>কনিডারিয়া পর্বটি রেডিয়াটার অন্তর্ভুক্ত।</p><ul><li>রেডিয়াটা হলো এমন একটি প্রাণীর দল যাদের দেহে অরীয় প্রতিসাম্য দেখা যায়।</li><li>কনিডারিয়া পর্বের প্রাণীরা যেমন জেলিফিশ ও হাইড্রা, অরীয় প্রতিসাম্য প্রদর্শন করে।</li></ul>",
+        },
+        {
+          id: 24,
+          question: "Porifera পর্বের প্রাণিতে কোন ধরনের লার্ভা পাওয়া যায়?",
+          options: {
+            a: "প্লানুলা",
+            b: "ট্যাডপোল",
+            c: "সারকারিয়া",
+            d: "অ্যাম্ফিব্লাস্টুলা",
+          },
+          correct: "d",
+          explanation:
+            "<p>পোরিফেরা পর্বের প্রাণীদের জীবনচক্রে অ্যাম্ফিব্লাস্টুলা লার্ভা পাওয়া যায়।</p><ul><li>এই লার্ভা দশাই এদের এক স্থান থেকে অন্য স্থানে ছড়িয়ে পড়তে সাহায্য করে।</li><li>এবং নতুন কলোনি গঠন করে।</li></ul>",
+        },
+        {
+          id: 25,
+          question: "কোন পর্বের প্রাণিতে অযৌন গেমিউল সৃষ্টি হয়?",
+          options: {
+            a: "Mollusca",
+            b: "Platyhelminthes",
+            c: "Annelida",
+            d: "Porifera",
+          },
+          correct: "d",
+          explanation:
+            "<p>পোরিফেরা পর্বের প্রাণীদের মধ্যে অযৌন প্রজননের একটি পদ্ধতি হলো গেমিউল সৃষ্টি।</p><ul><li>প্রতিকূল পরিবেশে গেমিউল গঠিত হয়।</li><li>যা পরবর্তীতে অনুকূল পরিবেশে নতুন স্পঞ্জে বিকশিত হয়।</li></ul>",
+        },
+        {
+          id: 26,
+          question: "নেফ্রিডিয়া পাওয়া যায় কোন পর্বের প্রাণিতে?",
+          options: {
+            a: "Cnidaria",
+            b: "Platyhelminthes",
+            c: "Annelida",
+            d: "Mollusca",
+          },
+          correct: "c",
+          explanation:
+            "<p>অ্যানিলিডা পর্বের প্রাণীদের রেচন অঙ্গ হলো নেফ্রিডিয়া।</p><ul><li>এই নেফ্রিডিয়া নালিকার মতো গঠন যা দেহ থেকে বর্জ্য পদার্থ পরিস্রাবণ করে।</li><li>এবং দেহের বাইরে নির্গত করে। কেঁচো এর একটি ভালো উদাহরণ।</li></ul>",
+        },
+        {
+          id: 27,
+          question: "Echinodermata পর্বের বৈশিষ্ট্য কোনটি?",
+          options: {
+            a: "পানি সংবহনতন্ত্র",
+            b: "পুঞ্জাক্ষি",
+            c: "শিখা কোষ",
+            d: "রক্ত সংবহনতন্ত্র",
+          },
+          correct: "a",
+          explanation:
+            "<p>একাইনোডার্মাটা পর্বের প্রাণীদের একটি অন্যতম বৈশিষ্ট্য হলো পানি সংবহনতন্ত্র বা অ্যাম্বুল্যাক্রাল তন্ত্র।</p><ul><li>এই তন্ত্র চলন, খাদ্য সংগ্রহ, শ্বাসপ্রশ্বাস এবং রেচন কার্যক্রমে গুরুত্বপূর্ণ ভূমিকা পালন করে।</li><li>পুঞ্জাক্ষি আর্থ্রোপোডার বৈশিষ্ট্য, শিখা কোষ প্লাটিহেলমিন্থেসের এবং রক্ত সংবহনতন্ত্র অধিকাংশ উন্নত প্রাণীতে দেখা যায়।</li></ul>",
+        },
+        {
+          id: 28,
+          question: "Arthropoda পর্বের প্রাণিতে পাওয়া যায় কোনটি?",
+          options: {
+            a: "প্যারাপোডিয়া",
+            b: "র‍্যাডুলা",
+            c: "হিমোসিল",
+            d: "নালিকা পদ",
+          },
+          correct: "c",
+          explanation:
+            "<p>আর্থ্রোপোডা পর্বের প্রাণীদের দেহের প্রধান গহ্বরটি হিমোসিল নামে পরিচিত, যা রক্তে (হিমোলিম্ফ) পূর্ণ থাকে।</p><ul><li>এই হিমোসিল রক্ত সংবহন এবং বিভিন্ন অভ্যন্তরীণ অঙ্গের কার্যকারিতায় সহায়তা করে।</li><li>প্যারাপোডিয়া অ্যানিলিডা, র‍্যাডুলা মলাস্কার এবং নালিকা পদ একাইনোডার্মাটার বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 29,
+          question: "সমুদ্র তারার প্রতিসাম্যতা কোন ধরনের?",
+          options: {
+            a: "দ্বিপার্শ্বীয়",
+            b: "গোলীয়",
+            c: "পঞ্চ-অরীয়",
+            d: "দ্বি-অরীয়",
+          },
+          correct: "c",
+          explanation:
+            "<p>সমুদ্র তারার প্রতিসাম্যতা পঞ্চ-অরীয় ধরনের।</p><ul><li>এদের দেহে পাঁচটি বাহু বা বাহুর গুণিতক থাকে।</li><li>যা কেন্দ্রীয় চাকতির চারপাশে অরীয়ভাবে বিন্যস্ত থাকে। এটি একাইনোডার্মাটা পর্বের একটি প্রধান বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 30,
+          question: "Echinodermata পর্বের বৈশিষ্ট্য কোনটি?",
+          options: {
+            a: "দেহ অপ্রতিসম",
+            b: "দেহ কিউটিকল দ্বারা আবৃত",
+            c: "দেহ খোলক দ্বারা আবৃত",
+            d: "বহিঃকঙ্কাল কণ্টকময়",
+          },
+          correct: "d",
+          explanation:
+            "<p>একাইনোডার্মাটা পর্বের প্রাণীদের দেহের পৃষ্ঠদেশ চুনময় কণ্টক দ্বারা আবৃত থাকে, যা তাদের বহিঃকঙ্কাল গঠন করে।</p><ul><li>এই বৈশিষ্ট্যটি তাদের নামের সাথেও সম্পর্কিত (Echinodermata মানে কণ্টকত্বক)।</li></ul>",
+        },
+        {
+          id: 31,
+          question: "কোরালস এবং জেলিফিশ কোন পর্বের প্রাণী?",
+          options: {
+            a: "নিডারিয়া",
+            b: "একাইনোডার্মাটা",
+            c: "পরিফেরা",
+            d: "মলাস্কা",
+          },
+          correct: "a",
+          explanation:
+            "<p>কোরালস এবং জেলিফিশ নিডারিয়া পর্বের প্রাণী।</p><ul><li>এই পর্বের প্রাণীদের নিডোসাইট নামক দংশক কোষ থাকে, যা আত্মরক্ষা ও শিকার ধরার কাজে ব্যবহৃত হয়।</li><li>এরা সাধারণত সামুদ্রিক হয়।</li></ul>",
+        },
+        {
+          id: 32,
+          question: "নিচের কোন প্রাণিটি গঠনগতভাবে সরলতম?",
+          options: {
+            a: "Hydra",
+            b: "Taenia",
+            c: "Pila",
+            d: "Spongilla",
+          },
+          correct: "d",
+          explanation:
+            "<p>Spongilla (স্পঞ্জিলা) হলো পোরিফেরা পর্বের একটি প্রাণী, যা গঠনগতভাবে সরলতম।</p><ul><li>এদের দেহে কোষীয় সংগঠন মাত্রা দেখা যায়, অর্থাৎ কোষগুলো একত্রিত হয়ে কলা বা টিস্যু গঠন করে না।</li><li>Hydra নিডারিয়া, Taenia প্লাটিহেলমিন্থেস এবং Pila মলাস্কা পর্বের প্রাণী, যারা স্পঞ্জিলা থেকে গঠনগতভাবে বেশি জটিল।</li></ul>",
+        },
+        {
+          id: 33,
+          question: "Annelida পর্বের প্রাণির লার্ভার নাম কী?",
+          options: {
+            a: "অ্যামোসিট",
+            b: "ট্রোকোফোর",
+            c: "প্যারেনকাইমুলা",
+            d: "মিরাসিডিয়াম",
+          },
+          correct: "b",
+          explanation:
+            "<p>অ্যানিলিডা পর্বের প্রাণীদের লার্ভার নাম হলো ট্রোকোফোর লার্ভা।</p><ul><li>এই লার্ভা দশা এদের জীবনচক্রের একটি গুরুত্বপূর্ণ অংশ।</li><li>এবং এদের মধ্যে সিলিয়া থাকে যা চলনে সহায়তা করে।</li></ul>",
+        },
+        {
+          id: 34,
+          question: "গুড়াকৃমি নিম্নে উল্লিখিত কোন পর্বের অন্তর্ভুক্ত?",
+          options: {
+            a: "Cnidaria",
+            b: "নেমাটোডা",
+            c: "Arthropoda",
+            d: "Platyhelminthes",
+          },
+          correct: "b",
+          explanation:
+            "<p>গুড়াকৃমি (Enterobius vermicularis) নেমাটোডা পর্বের অন্তর্ভুক্ত একটি পরজীবী কৃমি।</p><ul><li>এই পর্বের প্রাণীদের দেহ নলাকার, অখণ্ডায়িত এবং স্যুডোসিলোমযুক্ত হয়।</li></ul>",
+        },
+        {
+          id: 35,
+          question: "নিচের কোনটি সঠিক?",
+          options: {
+            a: "প্যারাপোডিয়া → Mollusca",
+            b: "র‍্যাডুলা → Arthropoda",
+            c: "স্পঞ্জোসিল → Porifera",
+            d: "নটোকর্ড → Echinodermata",
+          },
+          correct: "c",
+          explanation:
+            "<p>স্পঞ্জোসিল হলো পোরিফেরা পর্বের প্রাণীদের দেহের কেন্দ্রীয় গহ্বর, যা অস্টিয়া নামক ছিদ্র দিয়ে দেহের বাইরে উন্মুক্ত হয়।</p><ul><li>প্যারাপোডিয়া অ্যানিলিডার, র‍্যাডুলা মলাস্কার এবং নটোকর্ড কর্ডাটা পর্বের বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 36,
+          question:
+            "কোন পর্বের প্রাণির দেহপ্রাচীরে অস্ট্রিয়া নামক ছিদ্র বিদ্যমান?",
+          options: {
+            a: "Porifera",
+            b: "Cnidaria",
+            c: "Nematoda",
+            d: "Echinodermata",
+          },
+          correct: "a",
+          explanation:
+            "<p>পোরিফেরা পর্বের প্রাণীদের দেহপ্রাচীরে অসংখ্য ছোট ছিদ্র থাকে, যাদের অস্ট্রিয়া বলে।</p><ul><li>এই অস্ট্রিয়া দিয়েই জল দেহের ভেতরে প্রবেশ করে।</li><li>এবং স্পঞ্জোসিল নামক কেন্দ্রীয় গহ্বরে পৌঁছায়।</li></ul>",
+        },
+        {
+          id: 37,
+          question: "নিচের কোন প্রাণিটি দ্বিস্তরী?",
+          options: {
+            a: "তারামাছ",
+            b: "ঘাসফড়িং",
+            c: "জোঁক",
+            d: "হাইড্রা",
+          },
+          correct: "d",
+          explanation:
+            "<p>হাইড্রা একটি দ্বিস্তরী প্রাণী, অর্থাৎ এদের ভ্রূণীয় দশায় দুটি জননস্তর থাকে: একটোডার্ম ও এন্ডোডার্ম।</p><ul><li>এই দুটি স্তর থেকেই এদের পূর্ণাঙ্গ দেহ গঠিত হয়।</li><li>তারামাছ, ঘাসফড়িং এবং জোঁক ত্রিস্তরী প্রাণী।</li></ul>",
+        },
+        {
+          id: 38,
+          question: "কোনটি ঘাসফড়িংয়ের দেহে দেখা যায়?",
+          options: {
+            a: "মেসোগ্লিয়া",
+            b: "হিমোসিল",
+            c: "সিলেন্টেরন",
+            d: "সমখণ্ডকায়ন",
+          },
+          correct: "b",
+          explanation:
+            "<p>ঘাসফড়িং আর্থ্রোপোডা পর্বের প্রাণী, এবং এদের দেহে হিমোসিল নামক রক্তপূর্ণ দেহগহ্বর দেখা যায়।</p><ul><li>এটি এদের মুক্ত সংবহনতন্ত্রের অংশ।</li><li>মেসোগ্লিয়া নিডারিয়াতে, সিলেন্টেরন নিডারিয়াতে এবং সমখণ্ডকায়ন অ্যানিলিডাতে দেখা যায়।</li></ul>",
+        },
+        {
+          id: 39,
+          question: "Annelida-র বৈশিষ্ট্য কোনটি?",
+          options: {
+            a: "দেহ দ্বিস্তরী",
+            b: "পরিপাকতন্ত্রে র‍্যাডুলা নামক অংশ রয়েছে",
+            c: "এরা এককোষী",
+            d: "রেচন অঙ্গ নেফ্রিডিয়া",
+          },
+          correct: "d",
+          explanation:
+            "<p>অ্যানিলিডা পর্বের প্রাণীদের প্রধান রেচন অঙ্গ হলো নেফ্রিডিয়া।</p><ul><li>এই নেফ্রিডিয়াগুলো প্রতিটি খণ্ডে জোড়ায় জোড়ায় থাকে।</li><li>এবং দেহ থেকে বর্জ্য পদার্থ নির্গত করে।</li></ul>",
+        },
+        {
+          id: 40,
+          question: "কোনটি মলাস্কার বৈশিষ্ট্য?",
+          options: {
+            a: "র‍্যাডুলা",
+            b: "স্পিকিউল",
+            c: "রক্তকীট",
+            d: "জোঁক",
+          },
+          correct: "a",
+          explanation:
+            "<p>র‍্যাডুলা মলাস্কা পর্বের একটি অনন্য বৈশিষ্ট্য।</p><ul><li>এটি মুখবিবরে অবস্থিত একটি কাইটিনময় রেতিজিহ্বা যা খাদ্য চর্বণ ও সংগ্রহে ব্যবহৃত হয়।</li><li>স্পিকিউল পোরিফেরা, রক্তকীট নেমাটোডা এবং জোঁক অ্যানিলিডার অন্তর্ভুক্ত।</li></ul>",
+        },
+        {
+          id: 41,
+          question: "নেফ্রিডিয়া কোন তন্ত্রের সাথে সম্পর্কিত?",
+          options: {
+            a: "রেচন",
+            b: "শ্বসন",
+            c: "সংবহন",
+            d: "পরিপাক",
+          },
+          correct: "a",
+          explanation:
+            "<p>নেফ্রিডিয়া হলো প্রাণীদের রেচন অঙ্গ, যা বর্জ্য পদার্থ দেহ থেকে নিষ্কাশনে সহায়তা করে।</p><ul><li>এটি বিশেষ করে অ্যানিলিডা পর্বের প্রাণীদের একটি প্রধান বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 42,
+          question: "‘নালিকা পদ’ কোন পর্বের প্রাণির চলনাঙ্গ?",
+          options: {
+            a: "Nematoda",
+            b: "Annelida",
+            c: "Mollusca",
+            d: "Echinodermata",
+          },
+          correct: "d",
+          explanation:
+            "<p>'নালিকা পদ’ বা টিউব ফিট একাইনোডার্মাটা পর্বের প্রাণীদের চলন অঙ্গ।</p><ul><li>এরা পানি সংবহনতন্ত্রের অংশ।</li><li>এবং চলন, খাদ্য সংগ্রহ, এবং শ্বাসপ্রশ্বাসে সাহায্য করে।</li></ul>",
+        },
+        {
+          id: 43,
+          question: "কোন পর্বের প্রাণিতে পেরিহিমালতন্ত্র থাকে?",
+          options: {
+            a: "Annelida",
+            b: "Arthropoda",
+            c: "Echinodermata",
+            d: "Chordata",
+          },
+          correct: "c",
+          explanation:
+            "<p>একাইনোডার্মাটা পর্বের প্রাণীদের দেহে পেরিহিমালতন্ত্র থাকে।</p><ul><li>এটি এক ধরনের রক্তনালীবিহীন সংবহনতন্ত্র যা পানি সংবহনতন্ত্রের সাথে সম্পর্কিত।</li><li>এবং পুষ্টি ও গ্যাস পরিবহনে সহায়তা করে।</li></ul>",
+        },
+        {
+          id: 44,
+          question: "ম্যান্টল পর্দা সহায়তা করে কোন প্রক্রিয়ায়?",
+          options: {
+            a: "শ্বসন",
+            b: "শোষণ",
+            c: "সংবহন",
+            d: "পরিপাক",
+          },
+          correct: "a",
+          explanation:
+            "<p>ম্যান্টল পর্দা মলাস্কা পর্বের প্রাণীদের একটি গুরুত্বপূর্ণ অঙ্গ, যা শ্বাসপ্রশ্বাসে সহায়তা করে।</p><ul><li>ম্যান্টলের অভ্যন্তরে থাকা ফুলকাগুলি জলের মধ্য থেকে অক্সিজেন গ্রহণ করে।</li><li>কিছু মলাস্কা ম্যান্টল দ্বারাও গ্যাসীয় আদান-প্রদান করে।</li></ul>",
+        },
+        {
+          id: 45,
+          question: "ঝিনুক কোন পর্বের প্রাণী?",
+          options: {
+            a: "Platyhelminthes",
+            b: "Nematoda",
+            c: "Annelida",
+            d: "Mollusca",
+          },
+          correct: "d",
+          explanation:
+            "<p>ঝিনুক মলাস্কা পর্বের প্রাণী।</p><ul><li>এই পর্বের প্রাণীদের একটি নরম দেহ থাকে যা সাধারণত একটি খোলস দ্বারা আবৃত থাকে।</li><li>এবং এদের একটি ম্যান্টল নামক পাতলা আবরণ থাকে।</li></ul>",
+        },
+        {
+          id: 46,
+          question: "‘ম্যান্টল’ নামক পাতলা আবরণ থাকে-",
+          options: {
+            a: "Porifera",
+            b: "Mollusca",
+            c: "Annelida",
+            d: "Echinodermata",
+          },
+          correct: "b",
+          explanation:
+            "<p>'ম্যান্টল' নামক পাতলা আবরণ মলাস্কা পর্বের প্রাণীদের একটি প্রধান বৈশিষ্ট্য।</p><ul><li>এই ম্যান্টল দেহকে আবৃত করে রাখে।</li><li>এবং অনেক ক্ষেত্রে খোলস গঠনের জন্য দায়ী।</li></ul>",
+        },
+        {
+          id: 47,
+          question: "কোন পর্বের প্রাণিরা সমুদ্রের rain forest নামে পরিচিত?",
+          options: {
+            a: "প্রোটোজোয়া",
+            b: "নিডারিয়া",
+            c: "প্লাটিহেলমিনথিস",
+            d: "অ্যানিলিডা",
+          },
+          correct: "b",
+          explanation:
+            "<p>নিডারিয়া পর্বের অন্তর্গত প্রবাল প্রাচীরকে সমুদ্রের rain forest নামে পরিচিত।</p><ul><li>এই প্রবাল প্রাচীরগুলো সামুদ্রিক বাস্তুতন্ত্রে অত্যন্ত গুরুত্বপূর্ণ ভূমিকা পালন করে।</li><li>এবং অসংখ্য সামুদ্রিক জীবের আবাসস্থল হিসেবে কাজ করে।</li></ul>",
+        },
+        {
+          id: 48,
+          question: "কোন প্রাণির রেচনতন্ত্র নেই?",
+          options: {
+            a: "পালক স্টার",
+            b: "কেঁচো",
+            c: "রক্তকীট",
+            d: "জোঁক",
+          },
+          correct: "a",
+          explanation:
+            "<p>পালক স্টার (Feather star) একাইনোডার্মাটা পর্বের প্রাণী, এবং এদের কোনো সুনির্দিষ্ট রেচনতন্ত্র নেই।</p><ul><li>এদের দেহ থেকে বর্জ্য পদার্থ সাধারণত অ্যামোনিয়া আকারে সরাসরি জলের মধ্যে ব্যাপন প্রক্রিয়ায় নির্গত হয়।</li></ul>",
+        },
+        {
+          id: 49,
+          question: "Annelida এর রেচন অঙ্গের নাম কী?",
+          options: {
+            a: "নেফ্রিডিয়া",
+            b: "শিখা কোষ",
+            c: "ম্যালপিজিয়ান নালিকা",
+            d: "নেফ্রন",
+          },
+          correct: "a",
+          explanation:
+            "<p>অ্যানিলিডা পর্বের প্রাণীদের রেচন অঙ্গের নাম নেফ্রিডিয়া।</p><ul><li>এই নেফ্রিডিয়া প্রতিটি দেহ খণ্ডে অবস্থিত থাকে।</li><li>এবং রক্ত থেকে নাইট্রোজেন গঠিত বর্জ্য পদার্থ পরিস্রাবণের মাধ্যমে দেহ থেকে নির্গত করে।</li></ul>",
+        },
+        {
+          id: 50,
+          question: "Platyhelminthes পর্বের রেচন অঙ্গের নাম কী?",
+          options: {
+            a: "অস্টিয়া",
+            b: "শিখা কোষ",
+            c: "প্যারাপোডিয়া",
+            d: "নেফ্রিডিয়া",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্লাটিহেলমিন্থেস পর্বের প্রাণীদের রেচন অঙ্গের নাম শিখা কোষ বা ফ্লেম সেল।</p><ul><li>এই কোষগুলোতে সিলিয়া থাকে যা বর্জ্য পদার্থ সংগ্রহ করে।</li><li>এবং প্রোটোনেফ্রিডিয়া নামক নালিকার মাধ্যমে দেহের বাইরে নিষ্কাশন করে।</li></ul>",
+        },
+        {
+          id: 51,
+          question: "নিচের কোনটি সঠিক নয়?",
+          options: {
+            a: "কেঁচো-নেফ্রিডিয়া",
+            b: "তারা মাছ-পানি সংবহনতন্ত্র",
+            c: "চিংড়ি-হিমোসিল",
+            d: "গোলকৃমি-ফ্লেইম কোষ",
+          },
+          correct: "d",
+          explanation:
+            "<p>গোলকৃমি (Ascaris lumbricoides) নেমাটোডা পর্বের প্রাণী।</p><ul><li>এদের রেচন অঙ্গ হলো রেচন নালী বা H-আকৃতির রেচনতন্ত্র, শিখা কোষ বা ফ্লেইম কোষ নয়।</li><li>শিখা কোষ প্লাটিহেলমিন্থেস পর্বের রেচন অঙ্গ। বাকি অপশনগুলো সঠিক।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+              <label class="option" data-option="${option}">
+                <div class="circle">${option}</div>
+                <span class="option-text">${question.options[option]}</span>
+              </label>
+            `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                 <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                 <div class="explanation-content">
+                   <div class="explanation-label">ব্যাখ্যা:</div>
+                   ${question.explanation}
+                 </div>
+               </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+            <p class="question-label">${index + 1}. ${question.question}</p>
+            <div class="options">
+              ${optionsHTML}
+            </div>
+            ${explanationHTML}
+          `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
